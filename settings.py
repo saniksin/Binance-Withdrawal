@@ -3,6 +3,37 @@ from binance.enums import *
 from binance.exceptions import BinanceAPIException
 import secrets
 
+
+# Функция для проверки статуса 
+def check_coin(all_coins_info, coin, network):
+    # Проверяем статус монеты и возращаем словарь значений
+    for coin_info in all_coins_info:
+        if coin_info['coin'] == coin:
+            for network_data in coin_info['networkList']:
+                if network_data['network'] == network:
+                    info = {
+                        'withdraw_info': network_data['withdrawEnable'],
+                        'deposit_info': network_data['depositEnable'],
+                        'withdrawMin': str(network_data['withdrawMin']),
+                        'withdrawFee': str(network_data['withdrawFee']),
+                    }
+                    return info
+                
+    # Выводим сообщение, если информация о монете и сети не найдена
+    print(f"Информация о монете {coin} в сети {network} не найдена.")
+
+# Функция для вывода информации о статусе криптовалюты
+def print_coin_info(coin, network, info):
+    print('-'*70)
+    all_info = f"""\nТекущий статус {coin} в сети {network}:
+        Комиссия за вывод: {info['withdrawFee']} {coin}
+        Минимальная сумма вывода: {info['withdrawMin']} {coin}
+        Статус вывода: {info['withdraw_info']}
+        Статус депозита: {info['deposit_info']}
+            """
+    print(all_info)
+    print('-'*70)
+
 # Пользователь вводит тикер криптовалюты
 def set_coin(client, withdraw_status=True):
     try:
@@ -41,63 +72,108 @@ def is_float(value):
     except ValueError:
         return False
 
-# Делаем проверки
-def check_amount_value(amount, balance, multi=False, balance_now=None, \
-                                    withdraw_value=None, address_list=None):
-    if amount <= 0:
-        print('Ошибка: количество криптовалюты для вывода должно быть положительным числом.')
+# Информация для вывода
+def withdraw_status_info(asset, withdraw_fee, withdraw_min, withdraw_status):
+    print('-'*70)
+    print (f"""
+    Комиссия за каждый вывод: {withdraw_fee} {asset}.
+    Минимальное кол-во для вывода: {withdraw_min} {asset}.
+    Доступность вывода: {withdraw_status}.
+    """)
+    print('-'*70)
+
+# Проверяем статус криптовалюты
+def check_coin_status(client, asset, network):
+    asset_details = client.get_all_coins_info()
+    info = check_coin(asset_details, coin=asset, network=network)
+    if info:
+        withdraw_fee, withdraw_min, withdraw_status = info['withdrawFee'], info['withdrawMin'], info['withdraw_info']
+        withdraw_status_info(asset, withdraw_fee, withdraw_min, withdraw_status)
+        if not withdraw_status: 
+            print(f"Сейчас на бирже временно не доступен вывод {asset} в сети {network}")
+            raise SystemExit(1)
+        return float(withdraw_fee), float(withdraw_min)
+    else:
+        print(f'{asset} недоступен для вывода в сети {network}!')
         raise SystemExit(1)
-    if amount > float(balance['free']):
-        print('Ошибка: количество криптовалюты для вывода превышает доступный баланс.')
+
+# Проверяем корректным ли является вывод
+def check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value,
+                       withdraw_value, balance_now=None, multi=False, 
+                       address_list=None, random=False, withdraw_amount=None):
+    if (amount + withdraw_fee) < withdraw_min:
+        formatted_ammount = '{:.8f}'.format(amount)
+        print(f'Ошибка: указанное количество криптовалюты {formatted_ammount} + {withdraw_fee} должно быть больше минимально \
+допустимого значения на вывод {withdraw_min}.')
+        raise SystemExit(1)
+    if (amount + withdraw_fee) > balance_now:
+        print(f"Ошибка: указанное количество криптовалюты для вывода {amount} \
++ комиссия {withdraw_fee} превышает доступный баланс {balance_now} .")
         raise SystemExit(1)
     if multi is not None and multi:
-        if balance_now < withdraw_value:
+        if balance_now < (withdraw_value + withdraw_fee_value):
+            print("Ошибка: вам не хватит денег для вывода на все кошельки")
+            raise SystemExit(1)
+    elif random is not None and random:
+        if sum(withdraw_amount) + (len(address_list) * withdraw_fee) > balance_now:
             print("Ошибка: вам не хватит денег для вывода на все кошельки")
             raise SystemExit(1)
     else:
-        if amount * len(address_list) > float(balance['free']):
+        if (withdraw_value * len(address_list)) + (len(address_list) * withdraw_fee) > balance_now:
             print("Ошибка: вам не хватит денег для вывода на все кошельки")
             raise SystemExit(1)
+        
 
-# Пользователь вводит значение для каждого кошелька:
-def set_address_withdraw_value(balance, address_list, multi=False):
+
+# Пользователь задает сумму на вывод
+def set_address_withdraw_value(withdraw_fee, withdraw_min, balance, address_list, 
+                               multi=False, random=False):
     print('Введите кол-во криптовалюты для вывода. Это может быть как целое число так и дробное число.')
     # Пользователь задает значение для всех кошельков вручную
-    if multi is not None and multi:
+    withdraw_value = 0
+    withdraw_fee_value = withdraw_fee * len(address_list)
+    if multi:
         withdraw_amount = []
-        balance_now = float(balance['free'])
-        withdraw_value = 0
-        for adress in address_list:
-            amount = input(f'Сумма вывода для адреса {adress}\n    [+] Ваш ввод: ')
-            # Обрабатываем если пользователь ввел не числовое значение для вывода
+        for address in address_list:
+            amount = input(f'Введите сумму вывода для адреса {address}\n    [+] Ваш ввод: ')
             while not is_float(amount):
                 print('Введенное значение должно быть числом! Попробуйте еще раз')
-                amount = input(f'Сумма вывода для адреса {adress}\n    [+] Ваш ввод: ')
+                amount = input(f'Введите сумму вывода для адреса {address}\n    [+] Ваш ввод: ')
             amount = float(amount)
-
-            # Делаем проверку
-            check_amount_value(amount, balance, multi=True, balance_now=balance_now, withdraw_value=withdraw_value)
-
-            # Добавляем введенное значение в список
             withdraw_amount.append(amount)
             withdraw_value += amount
+            check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value,
+                               multi=True, balance_now=float(balance['free']), 
+                               withdraw_value=withdraw_value)
 
         return withdraw_amount, withdraw_value
-    
-    # В остальных случаях
     else:
         amount = input('    [+] Ваш ввод: ')
-        # Обрабатываем если пользователь ввел не числовое значение для вывода
         while not is_float(amount):
             print('Введенное значение должно быть числом! Попробуйте еще раз')
             amount = input('    [+] Ваш ввод: ')
         amount = float(amount)
+        withdraw_value += amount
 
-        withdraw_value = amount * len(address_list)
-
-        check_amount_value(amount, balance, address_list=address_list)
-
+        if random:
+            clone_amount = amount
+            i = 0
+            withdraw_amount = []
+            while i < len(address_list):
+                amount = clone_amount
+                random_value = secrets.randbelow(151) + 10000
+                amount = round(amount/100 * random_value/100, 8)
+                withdraw_amount.append(float(amount))
+                i += 1
+            withdraw_value = (sum(withdraw_amount))
+            check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value, balance_now=float(balance['free']), 
+                           withdraw_value=withdraw_value, address_list=address_list, random=True, withdraw_amount=withdraw_amount)
+            return amount, withdraw_value, withdraw_amount
+    
+        check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value, balance_now=float(balance['free']), 
+                           withdraw_value=withdraw_value, address_list=address_list)
         return amount, withdraw_value
+
 
 # Обрабатываем ответ пользователя
 def get_answer():
@@ -106,35 +182,41 @@ def get_answer():
     return answer
 
 # Выводим информацию чтобы пользователь ее проверил:
-def print_info(asset, network, withdraw_value, address_list=None, withdraw_amount=None, multi=False, random=False):
+def print_withdraw_info(asset, network, withdraw_fee, withdraw_value, address_list, withdraw_amount=None, multi=False, random=False):
 
     print('-'*70)
     print(f'''Проверяем информацию: 
     
-    Выводим: {asset.upper()}.
-    Сеть: {network}.''')
+    Выводим: {asset}.
+    Сеть: {network}.
+    Количество адресов: {len(address_list)}
+    Комиссия за вывод: {round(len(address_list) * withdraw_fee, 10)} {asset}''')
+
     if multi is not None and multi:
-        print(f'''    Общая сумма вывода: {round(withdraw_value, 10)} {asset}.\n{'-'*70}
+        print(f'''    Общая сумма вывода: {round(sum(withdraw_amount), 10)} {asset}.\n{'-'*70}
     Информация по кошелькам: ''')
         i = 0
         while i < len(address_list):
-            print(f"{' '*8}{address_list[i]} - {withdraw_amount[i]} {asset}.")
+            print(f"{' '*8}{address_list[i]} - {withdraw_amount[i]} + {withdraw_fee} {asset}.")
             i += 1
+        print(f'\n    Общая сумма вывода+комса: {round(withdraw_value, 10) + (round(len(address_list) * withdraw_fee, 10))}')
         print('-'*70)
         answer = get_answer()
         return answer
     else:
         if random is not None and random:
-            print(f'    Общая сумма вывода: {round(withdraw_value, 10)} {asset} + рандомное значение для каждого вывода до 1.5%.')
+            print(f'''    Общая сумма вывода: {round(withdraw_value, 10)} {asset} + рандомное значение для каждого вывода до 1.5%.
+    Общая сумма вывода+комса: {round(withdraw_value, 10) + (round(len(address_list) * withdraw_fee, 10))}''')
         else:
-            print(f'    Общая сумма вывода: {round(withdraw_value, 10)} {asset}.')
+            print(f'''    Общая сумма вывода: {round(withdraw_value, 10)} {asset}.
+    Общая сумма вывода+комса: {round((withdraw_value * len(address_list)), 10) + (round(len(address_list) * withdraw_fee, 10))}''')
         print('-'*70)
         answer = get_answer()
         return answer
     
 # Функция вывода криптовалюты
-# accept_withdraw(, , , , , =)
-def accept_withdraw(address_list, client, asset, network, amount=None, withdraw_amount=None, multi=False, random=False):
+def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=None,
+                    withdraw_amount=None, multi=False, random=False):
     # Вывод криптовалюты
     try:
         print('Начинаем вывод криптовалюты...')
@@ -142,26 +224,29 @@ def accept_withdraw(address_list, client, asset, network, amount=None, withdraw_
         if multi:
             i = 0
             while i < len(address_list):
-                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=withdraw_amount[i], network=network, transactionFeeFlag=True, timestamp=60000)
-                print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}. Сумма вывода: {withdraw_amount[i]} {asset}")
+                full_amount = round(withdraw_amount[i] + withdraw_fee, 6)
+                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=full_amount, network=network, timestamp=60000)
+                print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}.\n"
+                      f"Сумма вывода {withdraw_amount[i]} {asset} + комиссия за вывод {withdraw_fee} = {full_amount} {asset}")
                 i += 1
         # Если пользователь выбрал вывод рандомом
         elif random:
-            clone_amount = amount
-            i = 0
-            while i < len(address_list):
-                amount = clone_amount
-                random_value = secrets.randbelow(151) + 10000
-                amount = round(amount/100 * random_value/100, 8)
-                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=amount, network=network, transactionFeeFlag=True, timestamp=60000)
-                print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}. Cумма вывода: {amount} {asset}")
+            for i, address in enumerate(address_list):
+                full_amount = round(withdraw_amount[i] + withdraw_fee, 6)
+                print(full_amount)
+                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=full_amount, network=network, timestamp=60000)
+                print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}.\n"
+                      f"Сумма вывода {withdraw_amount[i]} {asset} + комиссия за вывод {withdraw_fee} = {full_amount} {asset}")
                 i += 1
         else:
             for i, address in enumerate(address_list):
-                tx_id = client.withdraw(coin=asset, address=address, amount=amount, network=network, transactionFeeFlag=True, timestamp=60000)
-                print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address} в сети {network}")
+                full_amount = round(amount + withdraw_fee, 6)
+                print(full_amount)
+                tx_id = client.withdraw(coin=asset, address=address, amount=full_amount, network=network, timestamp=60000)
+                print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address} в сети {network}. Сумма вывода {amount} + {withdraw_fee} = {full_amount} {asset}")
 
-        print('Программа успешно завершила вывод криптовалюты.')
+        print('-'*70)
+        print('\nПрограмма успешно завершила вывод криптовалюты.')
 
     except BinanceAPIException as e:
         print(f"Ошибка при выводе криптовалюты: {e}")
