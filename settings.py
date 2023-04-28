@@ -142,7 +142,7 @@ def accept_withdraw(address_list, client, asset, network, amount=None, withdraw_
         if multi:
             i = 0
             while i < len(address_list):
-                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=withdraw_amount[i], network=network, transactionFeeFlag=True, timestamp=60000)
+                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=withdraw_amount[i], network=network, transactionFeeFlag=False, timestamp=60000)
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}. Сумма вывода: {withdraw_amount[i]} {asset}")
                 i += 1
         # Если пользователь выбрал вывод рандомом
@@ -153,12 +153,12 @@ def accept_withdraw(address_list, client, asset, network, amount=None, withdraw_
                 amount = clone_amount
                 random_value = secrets.randbelow(151) + 10000
                 amount = round(amount/100 * random_value/100, 8)
-                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=amount, network=network, transactionFeeFlag=True, timestamp=60000)
+                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=amount, network=network, transactionFeeFlag=False, timestamp=60000)
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}. Cумма вывода: {amount} {asset}")
                 i += 1
         else:
             for i, address in enumerate(address_list):
-                tx_id = client.withdraw(coin=asset, address=address, amount=amount, network=network, transactionFeeFlag=True, timestamp=60000)
+                tx_id = client.withdraw(coin=asset, address=address, amount=amount, network=network, transactionFeeFlag=False, timestamp=60000)
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address} в сети {network}")
 
         print('Программа успешно завершила вывод криптовалюты.')
