@@ -233,7 +233,6 @@ def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=N
         elif random:
             for i, address in enumerate(address_list):
                 full_amount = round(withdraw_amount[i] + withdraw_fee, 6)
-                print(full_amount)
                 tx_id = client.withdraw(coin=asset, address=address_list[i], amount=full_amount, network=network, timestamp=60000)
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}.\n"
                       f"Сумма вывода {withdraw_amount[i]} {asset} + комиссия за вывод {withdraw_fee} = {full_amount} {asset}")
@@ -241,7 +240,6 @@ def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=N
         else:
             for i, address in enumerate(address_list):
                 full_amount = round(amount + withdraw_fee, 6)
-                print(full_amount)
                 tx_id = client.withdraw(coin=asset, address=address, amount=full_amount, network=network, timestamp=60000)
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address} в сети {network}. Сумма вывода {amount} + {withdraw_fee} = {full_amount} {asset}")
 
