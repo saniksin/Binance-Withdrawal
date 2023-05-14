@@ -37,7 +37,7 @@ def print_coin_info(coin, network, info):
 # Пользователь вводит тикер криптовалюты
 def set_coin(client, withdraw_status=True):
     try:
-        asset=str(input("""Введите тикер криптовалюты которую хотите вывести. (ETH/USDT/USDC/BNB/MATIC)
+        asset=str(input("""Введите тикер криптовалюты которую хотите вывести. (ETH/USDT/USDC/BNB/MATIC/AVAX)
     [+] Ваш ввод: """))
         if withdraw_status:
             balance = client.get_asset_balance(asset=f'{asset}')
@@ -54,9 +54,9 @@ def set_coin(client, withdraw_status=True):
 # Пользователь выбирает сеть
 def set_network():
     # Выбираем сеть для вывода
-    network_list = ['ETH', 'BSC', 'OPTIMISM', 'ARBITRUM', 'MATIC']
+    network_list = ['ETH', 'BSC', 'OPTIMISM', 'ARBITRUM', 'MATIC', "AVAXC"]
     network = input('''Введите название сети криптовалюты для вывода.
-Доступные сети: ETH, BSC, OPTIMISM, ARBITRUM, MATIC.
+Доступные сети: ETH, BSC, OPTIMISM, ARBITRUM, MATIC, AVAXC.
     [+] Ваш ввод: ''')
     network = network.strip().upper()
     if network not in network_list:

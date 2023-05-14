@@ -16,7 +16,7 @@ def withdraw_random_func(client, address_list):
         amount, withdraw_value, withdraw_amount = set_address_withdraw_value(withdraw_fee, withdraw_min, balance, address_list, random=True)
 
         # Выводим окончательную информацию для проверки и ожидаем подтверждения пользователя
-        answer = print_withdraw_info(asset, network, withdraw_fee, withdraw_value, address_list)
+        answer = print_withdraw_info(asset, network, withdraw_fee, withdraw_value, address_list, random=True)
 
         # Зависимо от резутата ввода пользователя осуществляем вывод
         if answer.lower() == 'да':
