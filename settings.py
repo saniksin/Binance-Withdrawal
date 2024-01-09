@@ -4,7 +4,7 @@ from binance.exceptions import BinanceAPIException
 import secrets
 
 
-# Функция для проверки статуса 
+# Функция для проверки статуса
 def check_coin(all_coins_info, coin, network):
     # Проверяем статус монеты и возращаем словарь значений
     for coin_info in all_coins_info:
@@ -18,11 +18,13 @@ def check_coin(all_coins_info, coin, network):
                         'withdrawFee': str(network_data['withdrawFee']),
                     }
                     return info
-                
+
     # Выводим сообщение, если информация о монете и сети не найдена
     print(f"Информация о монете {coin} в сети {network} не найдена.")
 
 # Функция для вывода информации о статусе криптовалюты
+
+
 def print_coin_info(coin, network, info):
     print('-'*70)
     all_info = f"""\nТекущий статус {coin} в сети {network}:
@@ -35,15 +37,17 @@ def print_coin_info(coin, network, info):
     print('-'*70)
 
 # Пользователь вводит тикер криптовалюты
+
+
 def set_coin(client, withdraw_status=True):
     try:
-        asset=str(input("""Введите тикер криптовалюты которую хотите вывести. (ETH/USDT/USDC/BNB/MATIC/AVAX)
+        asset = str(input("""Введите тикер криптовалюты которую хотите вывести. (ETH/USDT/USDC/BNB/MATIC/AVAX)
     [+] Ваш ввод: """))
         if withdraw_status:
             balance = client.get_asset_balance(asset=f'{asset}')
             print(f"""Ваш текущий баланс {balance['asset']}:
-    Доступный: {balance['free']}
-    Залоченый: {balance['locked']}""")
+            Доступный: {balance['free']}
+            Залоченый: {balance['locked']}""")
             return asset.strip().upper(), balance
         else:
             return asset.strip().upper()
@@ -52,11 +56,14 @@ def set_coin(client, withdraw_status=True):
         raise SystemExit(1)
 
 # Пользователь выбирает сеть
+
+
 def set_network():
     # Выбираем сеть для вывода
-    network_list = ['ETH', 'BSC', 'OPTIMISM', 'ARBITRUM', 'MATIC', "AVAXC"]
+    network_list = ['ETH', 'BSC', 'OPTIMISM',
+                    'ARBITRUM', 'MATIC', "AVAXC", "OPBNB"]
     network = input('''Введите название сети криптовалюты для вывода.
-Доступные сети: ETH, BSC, OPTIMISM, ARBITRUM, MATIC, AVAXC.
+Доступные сети: ETH, BSC, OPTIMISM, ARBITRUM, MATIC, AVAXC, OPBNB.
     [+] Ваш ввод: ''')
     network = network.strip().upper()
     if network not in network_list:
@@ -65,6 +72,8 @@ def set_network():
     return network
 
 # Проверка на тип данных
+
+
 def is_float(value):
     try:
         float(value)
@@ -73,9 +82,11 @@ def is_float(value):
         return False
 
 # Информация для вывода
+
+
 def withdraw_status_info(asset, withdraw_fee, withdraw_min, withdraw_status):
     print('-'*70)
-    print (f"""
+    print(f"""
     Комиссия за каждый вывод: {withdraw_fee} {asset}.
     Минимальное кол-во для вывода: {withdraw_min} {asset}.
     Доступность вывода: {withdraw_status}.
@@ -83,14 +94,19 @@ def withdraw_status_info(asset, withdraw_fee, withdraw_min, withdraw_status):
     print('-'*70)
 
 # Проверяем статус криптовалюты
+
+
 def check_coin_status(client, asset, network):
     asset_details = client.get_all_coins_info()
     info = check_coin(asset_details, coin=asset, network=network)
     if info:
-        withdraw_fee, withdraw_min, withdraw_status = info['withdrawFee'], info['withdrawMin'], info['withdraw_info']
-        withdraw_status_info(asset, withdraw_fee, withdraw_min, withdraw_status)
-        if not withdraw_status: 
-            print(f"Сейчас на бирже временно не доступен вывод {asset} в сети {network}")
+        withdraw_fee, withdraw_min, withdraw_status = info[
+            'withdrawFee'], info['withdrawMin'], info['withdraw_info']
+        withdraw_status_info(asset, withdraw_fee,
+                             withdraw_min, withdraw_status)
+        if not withdraw_status:
+            print(
+                f"Сейчас на бирже временно не доступен вывод {asset} в сети {network}")
             raise SystemExit(1)
         return float(withdraw_fee), float(withdraw_min)
     else:
@@ -98,8 +114,10 @@ def check_coin_status(client, asset, network):
         raise SystemExit(1)
 
 # Проверяем корректным ли является вывод
+
+
 def check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value,
-                       withdraw_value, balance_now=None, multi=False, 
+                       withdraw_value, balance_now=None, multi=False,
                        address_list=None, random=False, withdraw_amount=None):
     if (amount + withdraw_fee) < withdraw_min:
         formatted_ammount = '{:.8f}'.format(amount)
@@ -122,11 +140,10 @@ def check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value,
         if (withdraw_value * len(address_list)) + (len(address_list) * withdraw_fee) > balance_now:
             print("Ошибка: вам не хватит денег для вывода на все кошельки")
             raise SystemExit(1)
-        
 
 
 # Пользователь задает сумму на вывод
-def set_address_withdraw_value(withdraw_fee, withdraw_min, balance, address_list, 
+def set_address_withdraw_value(withdraw_fee, withdraw_min, balance, address_list,
                                multi=False, random=False):
     print('Введите кол-во криптовалюты для вывода. Это может быть как целое число так и дробное число.')
     # Пользователь задает значение для всех кошельков вручную
@@ -135,15 +152,17 @@ def set_address_withdraw_value(withdraw_fee, withdraw_min, balance, address_list
     if multi:
         withdraw_amount = []
         for address in address_list:
-            amount = input(f'Введите сумму вывода для адреса {address}\n    [+] Ваш ввод: ')
+            amount = input(
+                f'Введите сумму вывода для адреса {address}\n    [+] Ваш ввод: ')
             while not is_float(amount):
                 print('Введенное значение должно быть числом! Попробуйте еще раз')
-                amount = input(f'Введите сумму вывода для адреса {address}\n    [+] Ваш ввод: ')
+                amount = input(
+                    f'Введите сумму вывода для адреса {address}\n    [+] Ваш ввод: ')
             amount = float(amount)
             withdraw_amount.append(amount)
             withdraw_value += amount
             check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value,
-                               multi=True, balance_now=float(balance['free']), 
+                               multi=True, balance_now=float(balance['free']),
                                withdraw_value=withdraw_value)
 
         return withdraw_amount, withdraw_value
@@ -166,11 +185,11 @@ def set_address_withdraw_value(withdraw_fee, withdraw_min, balance, address_list
                 withdraw_amount.append(float(amount))
                 i += 1
             withdraw_value = (sum(withdraw_amount))
-            check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value, balance_now=float(balance['free']), 
-                           withdraw_value=withdraw_value, address_list=address_list, random=True, withdraw_amount=withdraw_amount)
+            check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value, balance_now=float(balance['free']),
+                               withdraw_value=withdraw_value, address_list=address_list, random=True, withdraw_amount=withdraw_amount)
             return amount, withdraw_value, withdraw_amount
-    
-        check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value, balance_now=float(balance['free']), 
+
+        check_amount_value(withdraw_fee, withdraw_min, amount, withdraw_fee_value, balance_now=float(balance['free']),
                            withdraw_value=withdraw_value, address_list=address_list)
         return amount, withdraw_value
 
@@ -182,6 +201,8 @@ def get_answer():
     return answer
 
 # Выводим информацию чтобы пользователь ее проверил:
+
+
 def print_withdraw_info(asset, network, withdraw_fee, withdraw_value, address_list, withdraw_amount=None, multi=False, random=False):
 
     print('-'*70)
@@ -197,9 +218,11 @@ def print_withdraw_info(asset, network, withdraw_fee, withdraw_value, address_li
     Информация по кошелькам: ''')
         i = 0
         while i < len(address_list):
-            print(f"{' '*8}{address_list[i]} - {withdraw_amount[i]} + {withdraw_fee} {asset}.")
+            print(
+                f"{' '*8}{address_list[i]} - {withdraw_amount[i]} + {withdraw_fee} {asset}.")
             i += 1
-        print(f'\n    Общая сумма вывода+комса: {round(withdraw_value, 10) + (round(len(address_list) * withdraw_fee, 10))}')
+        print(
+            f'\n    Общая сумма вывода+комса: {round(withdraw_value, 10) + (round(len(address_list) * withdraw_fee, 10))}')
         print('-'*70)
         answer = get_answer()
         return answer
@@ -213,8 +236,10 @@ def print_withdraw_info(asset, network, withdraw_fee, withdraw_value, address_li
         print('-'*70)
         answer = get_answer()
         return answer
-    
+
 # Функция вывода криптовалюты
+
+
 def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=None,
                     withdraw_amount=None, multi=False, random=False):
     # Вывод криптовалюты
@@ -225,7 +250,12 @@ def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=N
             i = 0
             while i < len(address_list):
                 full_amount = round(withdraw_amount[i] + withdraw_fee, 6)
-                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=full_amount, network=network, timestamp=60000)
+                tx_id = client.withdraw(coin=asset,
+                                        address=address_list[i],
+                                        amount=full_amount,
+                                        network=network,
+                                        timestamp=60000
+                                        )
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}.\n"
                       f"Сумма вывода {withdraw_amount[i]} {asset} + комиссия за вывод {withdraw_fee} = {full_amount} {asset}")
                 i += 1
@@ -233,15 +263,18 @@ def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=N
         elif random:
             for i, address in enumerate(address_list):
                 full_amount = round(withdraw_amount[i] + withdraw_fee, 6)
-                tx_id = client.withdraw(coin=asset, address=address_list[i], amount=full_amount, network=network, timestamp=60000)
+                tx_id = client.withdraw(
+                    coin=asset, address=address_list[i], amount=full_amount, network=network, timestamp=60000)
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}.\n"
                       f"Сумма вывода {withdraw_amount[i]} {asset} + комиссия за вывод {withdraw_fee} = {full_amount} {asset}")
                 i += 1
         else:
             for i, address in enumerate(address_list):
                 full_amount = round(amount + withdraw_fee, 6)
-                tx_id = client.withdraw(coin=asset, address=address, amount=full_amount, network=network, timestamp=60000)
-                print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address} в сети {network}. Сумма вывода {amount} + {withdraw_fee} = {full_amount} {asset}")
+                tx_id = client.withdraw(
+                    coin=asset, address=address, amount=full_amount, network=network, timestamp=60000)
+                print(
+                    f"[+] Транзакция #{i+1} успешно отправлена на адрес {address} в сети {network}. Сумма вывода {amount} + {withdraw_fee} = {full_amount} {asset}")
 
         print('-'*70)
         print('\nПрограмма успешно завершила вывод криптовалюты.')
@@ -250,5 +283,3 @@ def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=N
         print(f"Ошибка при выводе криптовалюты: {e}")
         print(f"Возникла ошибка при выводе на адрес {address_list[i]}")
         print('Программа завершена')
-
-   
