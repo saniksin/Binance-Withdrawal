@@ -1,7 +1,11 @@
 # Список всех функций и проверок для вывода
+import random
+import time
+
 from binance.enums import *
 from binance.exceptions import BinanceAPIException
 import secrets
+from config import SLEEP_FROM, SLEEP_TO
 
 
 # Функция для проверки статуса
@@ -236,10 +240,15 @@ def print_withdraw_info(asset, network, withdraw_fee, withdraw_value, address_li
         print('-'*70)
         answer = get_answer()
         return answer
+    
+
+def sleep():
+    second = random.randint(SLEEP_FROM, SLEEP_TO)
+    print(f'Я буду спать {second} секунд')
+    time.sleep(second)
+
 
 # Функция вывода криптовалюты
-
-
 def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=None,
                     withdraw_amount=None, multi=False, random=False):
     # Вывод криптовалюты
@@ -259,6 +268,8 @@ def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=N
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}.\n"
                       f"Сумма вывода {withdraw_amount[i]} {asset} + комиссия за вывод {withdraw_fee} = {full_amount} {asset}")
                 i += 1
+                sleep()
+                    
         # Если пользователь выбрал вывод рандомом
         elif random:
             for i, address in enumerate(address_list):
@@ -268,6 +279,7 @@ def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=N
                 print(f"[+] Транзакция #{i+1} успешно отправлена на адрес {address_list[i]} в сети {network}.\n"
                       f"Сумма вывода {withdraw_amount[i]} {asset} + комиссия за вывод {withdraw_fee} = {full_amount} {asset}")
                 i += 1
+                sleep()
         else:
             for i, address in enumerate(address_list):
                 full_amount = round(amount + withdraw_fee, 6)
@@ -275,7 +287,7 @@ def accept_withdraw(address_list, client, asset, network, withdraw_fee, amount=N
                     coin=asset, address=address, amount=full_amount, network=network, timestamp=60000)
                 print(
                     f"[+] Транзакция #{i+1} успешно отправлена на адрес {address} в сети {network}. Сумма вывода {amount} + {withdraw_fee} = {full_amount} {asset}")
-
+                sleep()
         print('-'*70)
         print('\nПрограмма успешно завершила вывод криптовалюты.')
 

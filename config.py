@@ -6,6 +6,10 @@ dotenv.load_dotenv()
 API_KEY = os.getenv('API_KEY')
 API_SECRET = os.getenv('API_SECRET')
 
+# Сон между действия в секундах
+SLEEP_FROM = 20
+SLEEP_TO = 40
+
 # Считываем список адресов
 address_list = []
 with open('address.txt') as address:
